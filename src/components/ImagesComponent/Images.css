@@ -1,0 +1,42 @@
+.update-info {
+	display: flex;
+	justify-content: start;
+	align-items: center;
+	padding: 10px;
+	border-bottom: 1px solid #dee2e6;
+}
+
+.update-info span {
+	font-size: 14px;
+	color: #6c757d;
+	font-style: italic;
+}
+
+.saving {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.card {
+  width: 30%;
+  cursor: pointer;
+  margin: 10px;
+  padding-bottom:20px;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+.loader-wrapper {
+  position: absolute;
+  top: 38%;
+  left: 45%;
+}
