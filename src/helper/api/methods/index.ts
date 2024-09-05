@@ -1,10 +1,13 @@
-import { client } from '../client';
-import { ImageData } from '../../../interfaces/imageDataInterface';
+import { client } from "../client";
+import { ImageData } from "../../../interfaces/imageDataInterface";
 
 export const getAllImages = async () => {
   try {
     const response = await client.get("/get-all-data");
-    return response.data?.body?.data;
+    return {
+      data: response.data?.body?.data,
+      updatedAt: response.data?.updatedAt,
+    };
   } catch (error) {
     console.error("Error fetching images:", error);
     throw error;

@@ -7,29 +7,40 @@ import { DragItem } from "../../interfaces/common";
 import Loader from "../Loader/Loader";
 import Card from "./ImageCard";
 import Modal from "../Modal/Modal";
-import { addImageData, getAllImages, updateBulkImage } from "../../helper/api/methods";
+import {
+  addImageData,
+  getAllImages,
+  updateBulkImage,
+} from "../../helper/api/methods";
 import { getLastUpdateAt } from "../../helper/readableDateFormat";
 import { mockData } from "../../helper/mockData";
-import './Images.css';
+import "./Images.css";
 
 const ImagesGrid: React.FC = () => {
   const [imagesData, setImagesData] = useState<ImageData[]>([]);
   const [imageOverlay, setImageOverlay] = useState<ImageData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>('');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>("");
   const [savingUpdate, setSavingUpdate] = useState<boolean>(false);
-
+  const [lastTouch, setLastTouch] = useState<Date>();
+  const [startSaving, setStartSaving] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const flag = false;
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const fetchedData = await getAllImages();
-        if (!fetchedData || fetchedData?.length === 0) {
+        if (!fetchedData?.data || fetchedData?.data?.length === 0) {
           const { updatedAt } = await addImageData(mockData);
-          console.log("here", updatedAt)
           setImagesData(mockData);
           setLastUpdatedAt(updatedAt);
         } else {
-          setImagesData((fetchedData)?.sort((a: ImageData, b: ImageData) => a.position - b.position));
+          setImagesData(
+            fetchedData?.data?.sort(
+              (a: ImageData, b: ImageData) => a.position - b.position
+            )
+          );
+          setLastUpdatedAt(fetchedData?.updatedAt);
         }
       } catch (error) {
         console.error(error);
@@ -41,26 +52,48 @@ const ImagesGrid: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-
     const updateDataHandler = async () => {
       try {
-        console.log("inside")
         setSavingUpdate(true);
         const { updatedAt } = await updateBulkImage(imagesData);
-        setLastUpdatedAt(updatedAt)
+        setLastUpdatedAt(updatedAt);
       } catch (error) {
         console.error(error);
-      } finally { 
+      } finally {
         setSavingUpdate(false);
-        setLoading(false);
+      }
+    };
+    let intervalId: NodeJS.Timeout | undefined;
+
+    if (startSaving) {
+      intervalId = setInterval(() => {
+        updateDataHandler();
+      }, 5000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
       }
     };
 
-    const intervalId: NodeJS.Timeout = setInterval(updateDataHandler, 5000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(imagesData), startSaving]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const timeDifference = lastTouch && Math.abs(
+        lastTouch?.getTime() - new Date().getTime()
+      );
+  
+      if (timeDifference && timeDifference > 10000) {
+        setStartSaving(false);
+      }
+      setCurrentTime(new Date());
+    }, 5000);
+  
     return () => clearInterval(intervalId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, [lastTouch]);
 
   const moveCard = async (dragIndex: number, hoverIndex: number) => {
     const dragCard = imagesData[dragIndex];
@@ -71,32 +104,42 @@ const ImagesGrid: React.FC = () => {
       ],
     });
     setImagesData(updatedCards);
+
+    setLastTouch(new Date());
+    setStartSaving(true);
   };
 
   const [, drop] = useDrop({
     accept: "card",
     hover(item: DragItem) {
       const dragIndex = item.index;
-      const hoverIndex = imagesData.findIndex(image => image.type === item.id);
+      const hoverIndex = imagesData.findIndex(
+        (image) => image.type === item.id
+      );
 
       if (dragIndex === hoverIndex) {
         return;
       }
       moveCard(dragIndex, hoverIndex);
       item.index = hoverIndex;
+      setLastTouch(new Date());
+      setStartSaving(true);
     },
   });
 
   const handleImageClick = (item: ImageData) => setImageOverlay(item);
-
   return (
     <>
       {loading ? (
         <Loader />
       ) : (
         <div>
+          {flag && currentTime}
           <div className="update-info">
-            <span>Last updated: {getLastUpdateAt(lastUpdatedAt)}</span>
+            <span>
+              Last updated:{" "}
+              {getLastUpdateAt(lastTouch ? `"${lastTouch.toISOString()}"` : lastUpdatedAt)}
+            </span>
             {savingUpdate && <span className="saving">Saving...</span>}
           </div>
           <div ref={drop} className="card-grid">
@@ -109,7 +152,12 @@ const ImagesGrid: React.FC = () => {
                 moveCard={moveCard}
               />
             ))}
-            {imageOverlay && <Modal data={imageOverlay} onClose={() => setImageOverlay(null)} />}
+            {imageOverlay && (
+              <Modal
+                data={imageOverlay}
+                onClose={() => setImageOverlay(null)}
+              />
+            )}
           </div>
         </div>
       )}

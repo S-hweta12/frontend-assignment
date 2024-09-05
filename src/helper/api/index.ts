@@ -57,6 +57,7 @@ export const apiHandlers = [
     return HttpResponse.json({
       status: 200,
       body: { data: parsedData },
+      updatedAt: localStorage.getItem("updatedAt") 
     });
   }),
   http.delete("/delete-data/:type", ({ params }) => {

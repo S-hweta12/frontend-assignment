@@ -1,5 +1,4 @@
 export const getLastUpdateAt = (updatedAt: string) => {
-  console.log("updatedAt", updatedAt)
   if (updatedAt === 'just now' || updatedAt === 'No updated time found') return updatedAt;
   if (!updatedAt) {
     return "No updated time found";
@@ -12,15 +11,15 @@ export const getLastUpdateAt = (updatedAt: string) => {
     console.error("Error parsing updatedAt:", error);
     return "Invalid date";
   }
-
+  
   const currentTime = new Date();
   const timeDifference = currentTime.getTime() - lastUpdateTime.getTime();
-
+  
   const seconds = Math.floor((timeDifference / 1000) % 60);
   const minutes = Math.floor((timeDifference / (1000 * 60)) % 60);
   const hours = Math.floor((timeDifference / (1000 * 60 * 60)) % 24);
   const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-
+  
   let lastUpdatedAt = "";
   if (days > 0) {
     lastUpdatedAt += `${days} day${days > 1 ? "s" : ""} `;
